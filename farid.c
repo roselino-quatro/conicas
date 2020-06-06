@@ -19,12 +19,12 @@
 #define FALSE 0
 
 typedef enum _coefficients {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
+    A, // quadrático (x2)
+    B, // quadratico misto (xy)
+    C, // quadrático (y2)
+    D, // linear (x)
+    E, // linear (y)
+    F, // termo independente
 } Coefficients;
 
 /* Retorna o minimo multiplo comum de dois número (necessario para exibir na forma fracionada) */
@@ -46,53 +46,77 @@ int isRational(double n) {
 	return FALSE;
 }
 
+
+/* Elimina os termos lineares a partir da translação */
 void translation(double *coefficients) {
     double x,y;
+    /* Calcula os determinantes que seram usados na regra de Cramer a partit da 1 e 2 linhas da matriz simétrica g */
     double mainDeterminant = (coefficients[A] * coefficients[C]) - (pow(coefficients[B]/2, 2));
     double xDeterminant = -(coefficients[D]/2 * coefficients[C]) + (coefficients[B]/2 * coefficients[E]/2);
     double yDeterminant = -(coefficients[E]/2 * coefficients[A]) + (coefficients[B]/2 * coefficients[D]/2);
     
 
-    if (mainDeterminant == 0 && ((xDeterminant != 0) | (yDeterminant != 0)))  {
+    if (mainDeterminant == 0 && ((xDeterminant != 0) | (yDeterminant != 0)))  { 
+        /* Caso o sistema for impossível */
         printf("Function impossible to translate\n");
         return;
     }
 
-    if (mainDeterminant == 0 && xDeterminant == 0 && yDeterminant == 0) {
-        x = 0;
+    if (mainDeterminant == 0 && xDeterminant == 0 && yDeterminant == 0) { 
+        /* Caso o sistema for possível mas indeterminado. Assim, assumimos um número x qualquer e calculamos o y a partir desse x */
+        x = 0; 
         y = -(coefficients[D]/coefficients[B]);
     }
 
-    else {
+    else { // Sistema possível e determinado. Calculamos o x e y a partir da regra de Cramer
         x = xDeterminant / mainDeterminant;
         y = yDeterminant / mainDeterminant;
     }
 
+    /* Usamos a 3 linha da matriz simetrica g */
     double translatedIndependentTerm = (coefficients[D]/2 * x) + (coefficients[E]/2 * y) + coefficients[F];
 
+    /* Mudamos os coefiientes */ 
     coefficients[D] = coefficients[E] = 0;
     coefficients[F] = translatedIndependentTerm;
 }
 
+/* Elimina o termo quadŕatico misto a partir da rotação */ 
 void rotation(double *coefficients) {
+    double cotan2 = (coefficients[A] - coefficients[C]) / coefficients[B];
     double sine2 = 1 / sqrt(1 + pow((coefficients[A]-coefficients[C])/coefficients[B], 2));
-    double mainDeterminant = -2.0;
+    double cosine2 = cotan2 * sine2;
+    /* Novamente, calcula os determinantes que seram usados na regra de Cramer */
+    double mainDeterminant = -2.0; // Como o determinante principal nunca sera 0, o sistema é sempre determinado
     double _aDeterminant = -(coefficients[A] + coefficients[C]) -(coefficients[B]/sine2);
     double _cDeterminant = -(coefficients[A] + coefficients[C]) + (coefficients[B]/sine2);
     
 
+    double sine = sqrt((1 - cosine2) / 2);
+    double cosine = sqrt((cosine2 + 1) / 2 ); 
+    double tmpD = coefficients[D];
+    double tmpE = coefficients[E];
+
+    if (coefficients[D]) 
+        coefficients[D] = (tmpD * cosine) + (tmpE * sine);
+    if (coefficients[E])
+        coefficients[E] = (cosine * tmpE) - (sine * tmpD);
+    
+
+    /* Efetiva a regra de Cramer e muda os  coeficientes */
     coefficients[A] = _aDeterminant / mainDeterminant;
     coefficients[C] = _cDeterminant / mainDeterminant;
-
     coefficients[B] = 0;
 
 }
 
+/* Identifica o tipo de cônica a partir invariantes ortogonais da conica*/
 char *getConicType(double *coeficients) {
-    double discriminant1 = coeficients[A] + coeficients[C];
-    double discriminant2 = coeficients[A] * coeficients[C];
-    double discriminant3 = coeficients[A] * coeficients[C] * coeficients[F];
-    double sigma = (coeficients[A] * coeficients[F]) + (coeficients[F] * coeficients[C]);
+    double discriminant1 = coeficients[A] + coeficients[C]; // traço de M2 excluindo b
+    double discriminant2 = coeficients[A] * coeficients[C]; // determinante de M2 excluindo b
+    double discriminant3 = (coeficients[A] * coeficients[C] * coeficients[F]) -  
+    ((pow(coeficients[D], 2 ) * coeficients[C] + pow(coeficients[E], 2 ) * coeficients[A]) / 4) ; //determinante de M3 excluindo b
+    double delta = (coeficients[A] * coeficients[F]) + (coeficients[F] * coeficients[C]); //cofatores
 
     if (discriminant2 != 0) {
         if (discriminant3 != 0) {
@@ -116,9 +140,9 @@ char *getConicType(double *coeficients) {
 
     if(discriminant3 != 0) 
         return "parabola";
-    if (sigma < 0)
+    if (delta < 0)
         return "duas retas paralelas";
-    if(sigma == 0) 
+    if(delta == 0) 
         return "reta";
     
     return "conjunto vazio";
