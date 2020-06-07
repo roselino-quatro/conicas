@@ -217,12 +217,45 @@ int main() {
 
     printf("Tipo de conica: %s\n", getConicType(coefficients));
 
+	/* Calculo de valores das conicas, esses calculos dependem dos sistemas das conicas ter sido translaçado e rotacionado quando possivel */
 	if(!strcmp(getConicType(coefficients),"elipse")) {
 		double p = sqrt(fabs((coefficients[F] / coefficients[A]) - (coefficients[F] / coefficients[C]))); // Calculo do valor dos focos, sendo p o valor focal
 		printf("p = %lf\n", p);
 		printf("Focos: F1=(%lf, %lf), F2=(%lf, %lf)\n", coefficients[D] + p, coefficients[E], coefficients[D] - p, coefficients[E]);
 		printf("Centro: C=(%lf,%lf)\n", coefficients[D]/coefficients[F], coefficients[E]/coefficients[F]);
 		printf("Vertices: V1 = (±√%lf, 0) V2 = (0, ±√%lf)\n", coefficients[F]/coefficients[A], coefficients[F]/coefficients[C]); // Isso vai dar um resultado incorreto se não tivermos eliminado os termos lineares, depois eu resolvo isso melhor
+	}
+	if(!strcmp(getConicType(coefficients),"parabola")) {
+		double p;
+		if(coefficients[A]) {
+			p = coefficients[A]/4;
+			printf("Foco: F=(0, %lf)", p);
+			printf("Diretriz: r: y = -%lf)", p);
+			printf("eixo: e: x = 0\n");
+			printf("vertice(0, %lf)\n", (-(coefficients[F]/coefficients[E])));
+		} else {
+			p = coefficients[C]/4;
+			printf("Foco: F=(%lf, 0)", p);
+			printf("Diretriz: r: x = -%lf)", p);
+			printf("eixo: e: y = 0\n");
+			printf("vertice(%lf, 0)\n", (-(coefficients[F]/coefficients[E])));
+		}
+	}
+	if(!strcmp(getConicType(coefficients),"hiperbole")) {
+		double a = coefficients[F]/coefficients[A];
+		double c = coefficients[F]/coefficients[C];
+		double x = sqrt(a+c);
+		if(c>0) {
+			printf("Foco: F1=(%lf,0) F2=(-%lf,0)\n", x, x);
+			printf("Vertices: V1=(%lf,0) V2=(-%lf,0)\n", a, a);
+			printf("Assintotas: y=x*√(%lf/%lf) e y=x*-√(%lf/%lf)", c, a, c, a);
+			printf("Centro: C=(0,0)");
+		} else {
+			printf("Foco: F1=(0,%lf) F2=(0,-%lf)\n", x, x);
+			printf("Vertices: V1=(0,%lf) V2=(0,-%lf)\n", c, c);
+			printf("Assintotas: y=x*√(%lf/%lf) e y=x*-√(%lf/%lf)", a, c, a, c);
+			printf("Centro: C=(0,0)");
+		}
 	}
 
 	for(int i = 0; i<AMOUNT_OF_COEFFICIENTS; i++) {
